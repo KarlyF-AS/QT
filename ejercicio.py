@@ -5,6 +5,8 @@ from PyQt6.QtWidgets import (QApplication, QMainWindow, QWidget,
                              QPushButton, QTextEdit, QComboBox, QCheckBox,
                              QGroupBox, QSlider)
 from PyQt6.QtCore import Qt
+from reportlab.lib.pagesizes import A4
+from reportlab.pdfgen import canvas
 
 
 class MiVentana(QMainWindow):
@@ -13,6 +15,26 @@ class MiVentana(QMainWindow):
         self.setWindowTitle("Ejemplo completo")
         self.setMinimumSize(800, 400)
 
+# _________________________________________________________________________
+#  REPORTLAB
+# ______________________________________________________________________
+
+        # # 1. Crear el PDF
+        # #Título grande
+        # pdf = canvas.Canvas("peliculas.pdf", pagesize=A4)
+        # pdf.drawString(100,780, "Lista de peliculas")
+        #
+        # # 2. Escribir texto
+        # pdf.setFont("Helvetica", 18)
+        # pdf.drawString(100,780, "Titulo: El padrino")
+        # pdf.drawString(100, 730, "Director: Coppola")
+        # # Línea separadora
+        # pdf.line(100, 720, 500, 720)
+        # # 3. Guardar
+        #pdf.save()
+# _________________________________________________________________________
+        #CONEXION DB
+# _________________________________________________________________________
         # Conectar y guardar como self. para usarlo en toda la clase
         self.conexion = sqlite3.connect("peliculas.db")
         self.cursor = self.conexion.cursor()
@@ -92,6 +114,10 @@ class MiVentana(QMainWindow):
         self.btnLimpiar.clicked.connect(self.limpiar)
         layout_botones.addWidget(self.btnAnadir)
         layout_botones.addWidget(self.btnLimpiar)
+        #Boton reporlab y bd
+        self.btnPDF = QPushButton("PDF")
+        self.btnPDF.clicked.connect(self.generar_pdf)
+        layout_botones.addWidget(self.btnPDF)
 
         # Meter todo en el groupbox
         layout_gpb.addLayout(fila1)
@@ -133,6 +159,27 @@ class MiVentana(QMainWindow):
     #     else:
     #         self.dial.setStyleSheet("background-color: red")
     #     self.txeResultado.append(f"Dial: {valor}")
+
+    # Función
+    def generar_pdf(self):
+        self.cursor.execute("SELECT * FROM peliculas")
+        peliculas = self.cursor.fetchall()
+
+        pdf = canvas.Canvas("peliculas.pdf", pagesize=A4)
+
+        pdf.setFont("Helvetica-Bold", 18)
+        pdf.drawString(100, 780, "Lista de películas")
+
+        y = 740  # posición donde empieza la lista
+        pdf.setFont("Helvetica", 12)
+
+        for pelicula in peliculas:
+            texto = f"{pelicula[1]}, {pelicula[2]}, {pelicula[3]}, Puntuación: {pelicula[4]}"
+            pdf.drawString(100, y, texto)
+            y -= 20  # bajar 20 puntos por cada línea
+
+        pdf.save()
+        self.txeResultado.append("PDF generado: peliculas.pdf")
 
     def al_mover_slider(self, valor):
         if valor < 33:
